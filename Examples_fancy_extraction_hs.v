@@ -1,9 +1,11 @@
 Require Export Unicode.Utf8_core.
 (* Add LoadPath "." as Casts. *)
 
-Require Import Cast DecidableExtns Showable List Ascii String.
+Require Import Cast DecidableExtns Showable List Ascii String ExtrHaskellString.
 
 Local Open Scope string_scope.
+
+Extraction Language Haskell.
 
 Extract Inductive bool => "Data.Bool.Bool" [ "Data.Bool.True" "Data.Bool.False" ].
 
@@ -47,7 +49,6 @@ Eval compute in g (? 0).
 
 Definition client (x: nat) := g (? x).
 
-Extraction Language Haskell.
 Extract Constant failed_cast =>
      "\ a s -> Prelude.error (""Cast has failed with "" Prelude.++ s)".
 Extraction "test.hs" client.

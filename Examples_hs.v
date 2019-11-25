@@ -7,7 +7,7 @@
 (* Add LoadPath "." as Casts. *)
 
 Require Export Unicode.Utf8_core.
-Require Import Cast Decidable Showable List Ascii String.
+Require Import Cast Decidable Showable List Ascii String ExtrHaskellString.
 
 Local Open Scope string_scope.
 

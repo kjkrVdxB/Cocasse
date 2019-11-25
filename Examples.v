@@ -34,8 +34,8 @@ Eval compute in g (? 0).
 
 Definition client (x: nat) := g (? x).
 
-(* Extraction to Ocaml *)
-Extraction Language Ocaml.
+(* Extraction to OCaml *)
+Extraction Language OCaml.
 Extract Constant failed_cast => "(let f _ s = failwith (String.concat """" ([""Cast has failed because of ""]@ (List.map (String.make 1) s))) in f)".
 Extraction Inline failed_cast.
 
