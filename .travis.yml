@@ -1,0 +1,32 @@
+dist: trusty
+sudo: required
+language: generic
+
+services:
+  - docker
+
+env:
+  matrix:
+  - COQ_IMAGE="coqorg/coq:dev"
+
+before_install: |
+  # Run the COQ container and display build metadata
+  docker run -d -i --init --name=COQ -v ${TRAVIS_BUILD_DIR}:/home/coq/cocasse -w /home/coq/cocasse ${COQ_IMAGE}
+  docker exec COQ /bin/bash --login -c "
+    export PS4='+ \e[33;1m(\$0 @ line \$LINENO) \$\e[0m '
+    set -ex
+    opam config list
+    opam repo list
+    opam list
+    "
+script:
+- echo -e "${ANSI_YELLOW}Building Cocasse...${ANSI_RESET}" && echo -en 'travis_fold:start:script\\r'
+- |
+  docker exec COQ /bin/bash --login -c "
+    export PS4='+ \e[33;1m(\$0 @ line \$LINENO) \$\e[0m '
+    set -ex
+    sudo chown -R coq:coq /home/coq/cocasse
+    make
+    "
+- docker stop COQ  # optional
+- echo -en 'travis_fold:end:script\\r'
