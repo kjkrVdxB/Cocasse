@@ -1,0 +1,11 @@
+-R theories Cocasse
+
+theories/Cast.v
+theories/DecidableExtns.v
+theories/Showable.v
+theories/records.v
+
+examples/compiler.v
+examples/Examples.v
+examples/Examples_hs.v
+examples/Examples_fancy_extraction_hs.v

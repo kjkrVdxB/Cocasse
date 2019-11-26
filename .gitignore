@@ -19,5 +19,8 @@
 *.hs
 *.v#
 
+.coqdeps.d
+
 Makefile_coq
+Makefile_coq.conf
 unsafe_extraction.v
