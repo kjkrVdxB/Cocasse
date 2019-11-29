@@ -24,29 +24,14 @@ Notation " ( x ; p ) " := (exist _ x p).
 
  *)
 
-Inductive dec_or_proven (P : Prop) :=
-| isDecidable : (Decidable P) -> dec_or_proven P
-| isProven    : P -> dec_or_proven P.
-
-Class Dec_or_proven P := _Dec_or_proven : dec_or_proven P.
-
-Definition o_proven {P} p : Dec_or_proven P := isProven P p.
-
-Instance Dec_or_proven_dec P (H : Decidable P) : Dec_or_proven P
-  := isDecidable _ H.
-
 Axiom failed_cast : 
   forall {A:Type} {P : A -> Prop} (a:A) {msg1:string} (msg2: Prop), {a : A | P a}.
 
 Definition cast (A:Type) `{Show A} (P : A -> Prop) 
-  (a:A) {proof_term : Dec_or_proven (P a)} : {a : A | P a} :=
+  (a:A) {proof_term : Decidable (P a)} : {a : A | P a} :=
   match proof_term with
-    | isDecidable _ H =>
-      match dec (P a) with
-        | inl p => (a ; p)
-        | inr _ => failed_cast a (msg1 := show a) (P a)
-      end
-    | isProven _ p => (a;p)
+    | inl p => (a ; p)
+    | inr _ => failed_cast a (msg1 := show a) (P a)
   end.
 
 Notation "?" := (cast _ _).
@@ -105,7 +90,7 @@ Notation "<??" := (cast_forall_dom _ _ _ _).
 (* Definition not_dec_failed : {a : nat | forall n, n > 0 -> n > a} := ? 0. *)
 
 Definition explicit_proof_example : {a : nat | forall n, n > 0 -> n > a} :=
-  ? 0 (proof_term := o_proven (fun n H => H)). 
+  ? 0 (proof_term := inl (fun n H => H)).
 
 (* Deciding with an equivalent decision procedure *)
 
