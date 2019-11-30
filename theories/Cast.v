@@ -7,7 +7,7 @@
 (* Add LoadPath "." as Casts. *)
 
 Require Export Unicode.Utf8_core.
-Require Import String DecidableExtns Showable.
+Require Import String DecSSR Showable ssreflect ssrbool ssrmatching.
 
 Notation "x .1" := (proj1_sig x) (at level 3).
 Notation "x .2" := (proj2_sig x) (at level 3).
@@ -25,29 +25,38 @@ Notation " ( x ; p ) " := (exist _ x p).
  *)
 
 Axiom failed_cast : 
-  forall {A:Type} {P : A -> Prop} (a:A) {msg1:string} (msg2: Prop), {a : A | P a}.
+  forall {A : Type} {P : A -> Prop} (a:A) {msg1:string} (msg2: Prop), {a : A | P a}.
 
-Definition cast (A:Type) `{Show A} (P : A -> Prop) 
-  (a:A) {proof_term : Decidable (P a)} : {a : A | P a} :=
-  match proof_term with
-    | inl p => (a ; p)
-    | inr _ => failed_cast a (msg1 := show a) (P a)
+Definition cast (A : Type) `{Show A} (P : A -> Decidable) (a : A)
+  : {a : A | P a} :=
+  match dec (P a) with
+    | left p => (a ; p)
+    | right _ => failed_cast a (msg1 := show a) (P a)
   end.
 
 Notation "?" := (cast _ _).
 
+Definition x : { n : nat | n <= 10 } := ? 9.
+
+(* Cast with explicit decidability proof *)
+
+Definition cast_proof (A : Type) `{Show A} (P : A -> Prop) (a : A) (proof : decidable (P a)) : {a: A | P a} :=
+  match proof with
+    | left p => (a ; p)
+    | right _ => failed_cast a (msg1 := show a) (P a)
+  end.
+
+
 (* Casts for non-dependent functions *)
 
 (* - strengthening the range *)
-Definition cast_fun_range (A B : Type) `{Show B} (P : B -> Prop) 
-  (dec : forall b, Decidable (P b)) :
+Definition cast_fun_range (A B : Type) `{Show B} (P : B -> Decidable) :
     (A -> B) -> A -> {b : B | P b} :=
   fun f a => ? (f a).
 Notation "?>" := (cast_fun_range _ _ _ _).
 
 (* - relaxing the domain *)
-Definition cast_fun_dom (A B : Type) `{Show A} (P: A -> Prop) 
-  (dec: forall a, Decidable (P a)) :
+Definition cast_fun_dom (A B : Type) `{Show A} (P: A -> Decidable) :
     ({a : A | P a} -> B)  -> A -> B :=
   fun f a => f (? a).
 Notation "<?" := (cast_fun_dom _ _ _ _).
@@ -56,8 +65,7 @@ Notation "<?" := (cast_fun_dom _ _ _ _).
 
 (* - strengthening the range *)
 Definition cast_forall_range (A: Type) (B: A -> Type) `{forall a, Show (B a)}
-  (P : forall a:A, B a -> Prop) 
-  (dec : forall a (b : B a), Decidable (P a b)) :
+  (P : forall a:A, B a -> Decidable) :
     (forall a: A, B a) -> forall a: A, {b : B a | P a b} :=
   fun f a => ? (f a).
 Notation "??>" := (cast_forall_range _ _ _ _).
@@ -71,32 +79,35 @@ Axiom failed_cast_proj1 :
   forall {A:Type} `{Show A} {P : A -> Prop} {a: A} (msg:Prop),
     (failed_cast (P:=P) a (msg1 := show a) msg).1 = a.
 
-Definition hide_cast (A: Type) (P: A -> Prop) (B: A -> Type) `{Show A}
-           (dec: forall a, Decidable (P a)) (a:A): B (? a).1 -> B a.
+Definition hide_cast (A: Type) (P: A -> Decidable) (B: A -> Type) `{Show A}
+            (a:A): B (cast A P a).1 -> B a.
 Proof.
-  unfold cast. case (dec a); intro p.
+  unfold cast. case (dec (P a)); intro p.
   - exact (fun b => b).
   - exact (fun b => eq_rect _ _ b _ (failed_cast_proj1 (P a))).
 Defined.
 
-Notation "[?]" := (hide_cast _ _ _ _ _).
+Notation "[?]" := (hide_cast _ _ _ _).
 
-Definition cast_forall_dom (A: Type) (P: A -> Prop) `{Show A}
-           (B: A -> Type) (dec: forall a, Decidable (P a)) :
+Definition cast_forall_dom (A: Type) (P: A -> Decidable) `{Show A}
+           (B: A -> Type) :
    (forall x: {a : A | P a}, B x.1)  -> (forall a : A, B a) :=
   fun f a => [?] (f (? a)).
 Notation "<??" := (cast_forall_dom _ _ _ _).
 
-(* Definition not_dec_failed : {a : nat | forall n, n > 0 -> n > a} := ? 0. *)
+Fail Definition not_dec_failed : {a : nat | forall n, n > 0 -> n > a} := ? 0.
 
 Definition explicit_proof_example : {a : nat | forall n, n > 0 -> n > a} :=
-  ? 0 (proof_term := inl (fun n H => H)).
+  cast_proof _ _ 0 (left (fun n H => H)).
 
 (* Deciding with an equivalent decision procedure *)
 
-Definition Decidable_equivalent {P P' : Prop}
-     (HPP' : P' <-> P) `{Decidable P'} : Decidable P :=
+Definition Decidable_equivalent (P' : Decidable) (P : Prop)
+     (HPP' : P' <-> P) : decidable P :=
     match dec _ with
-      | inl e => inl (proj1 HPP' e)
-      | inr ne => inr (fun x => ne (proj2 HPP' x))
+      | left e => left (proj1 HPP' e)
+      | right ne => right (fun x => ne (proj2 HPP' x))
     end.
+
+Canonical dec_equiv {P' : Decidable} {P : Prop}
+     (HPP' : P' <-> P) := Pack P (Decidable_equivalent P' _ HPP').

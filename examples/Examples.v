@@ -7,7 +7,7 @@
 (* Add LoadPath "." as Casts. *)
 
 Require Export Unicode.Utf8_core.
-Require Import Cast DecidableExtns Showable List ExtrOcamlString.
+Require Import Cast DecSSR Showable List ExtrOcamlString.
 
 Local Open Scope string_scope.
 
@@ -15,21 +15,21 @@ Local Open Scope string_scope.
 
 Definition x_not_ok := 1.
            
-Definition x_good : {n:nat | n < 10} := ? 5.
+Definition x_good : {n:nat | n <= 10} := ? 5.
 
 Eval compute in x_good.
 
 Eval compute in x_good.1.
 
-Definition x_bad : {n:nat | n < 10} := ? 15.
+Definition x_bad : {n:nat | n <= 10} := ? 15.
 
 Eval compute in x_bad.
 
 Eval compute in x_bad.1.
 
-Definition g (x: {n:nat | n > 0}) := 1.
+Definition g (x: {n:nat | n <= 5}) := 1.
 
-Eval compute in g (? 0).
+Eval compute in g (? 6).
 
 
 Definition client (x: nat) := g (? x).
@@ -45,33 +45,32 @@ Extraction "test.ml" client.
 
 Definition Peq : nat -> Prop := fun n => n = n.
 
-Definition wrap : nat ->  { n : nat | Peq n /\ (n=10)} :=
+Fail Definition wrap : nat ->  { n : nat | Peq n /\ (n=10)} :=
   fun n => ? n.
 
-Eval compute in ((wrap 11) .1).
-Eval compute in ((wrap 10) .1).
+Fail Eval compute in ((wrap 11) .1).
+Fail Eval compute in ((wrap 10) .1).
 
 
 (* Casting lists *)
 
-Definition cast_list (A: Type) `{Show A} (P : A -> Prop) 
-  (dec : forall a, Decidable (P a)): 
+Definition cast_list (A: Type) `{Show A} (P : A -> Decidable) : 
     list A -> list {a : A | P a} := map (fun a => ? a).
 
-Notation "?::" := (cast_list _ _ _).
+Notation "?::" := (cast_list _ _).
 
-Definition list_of_3: list {n:nat | n = 3} := ?:: (3 :: 2 :: 1 :: nil).
+Fail Definition list_of_3: list {n:nat | n = 3} := ?:: (3 :: 2 :: 1 :: nil).
 
-Eval compute in list_of_3.
+Fail Eval compute in list_of_3.
 
 
 (* strengthening the range of S *)
 
-Definition top_succ : nat -> {n:nat | n < 10} := ?> S.
+Fail Definition top_succ : nat -> {n:nat | n < 10} := ?> S.
 
-Eval compute in top_succ 6.
+Fail Eval compute in top_succ 6.
 
-Eval compute in top_succ 9.
+Fail Eval compute in top_succ 9.
 
 
 (* function with rich argument, condition is lost upon extraction *)
@@ -82,19 +81,19 @@ Extraction foo.
 
 (* weakening the domain to protect before extraction *)
 
-Definition gee := <? foo.
+Fail Definition gee := <? foo.
 
-Extraction gee.
+Fail Extraction gee.
 
 
 (* strengthening the range with dependency *)
 
-Definition f_inc : 
+Fail Definition f_inc : 
   (nat -> nat) -> forall n : nat, {m:nat | (n <= m)} := ??>.
 
-Eval compute in f_inc S 3.
+Fail Eval compute in f_inc S 3.
 
-Eval compute in f_inc (fun _ => O) 3.
+Fail Eval compute in f_inc (fun _ => O) 3.
 
 
 (* length-indexed lists *)
@@ -111,23 +110,23 @@ Fixpoint build_list (n: nat) : ilist n :=
 
 (* casting build_list to pretend it always returns non empty lists *)
 
-Definition non_empty_build: forall n:nat,  {_: ilist n | n > 0 } := 
+Fail Definition non_empty_build: forall n:nat,  {_: ilist n | n > 0 } := 
   ??> build_list.
 
-Eval compute in non_empty_build 2.
+Fail Eval compute in non_empty_build 2.
 
-Eval compute in non_empty_build 0.
+Fail Eval compute in non_empty_build 0.
 
 Definition build_pos : ∀ x: {n: nat | n > 0 }, ilist (x.1) :=
  fun n => build_list (n.1).
 
-Definition build_pos' : forall n: nat, ilist n := <?? build_pos.
+Fail Definition build_pos' : forall n: nat, ilist n := <?? build_pos.
 
-Eval compute in build_pos' 2.
+Fail Eval compute in build_pos' 2.
 
 Opaque eq_rect.
 
-Eval compute in build_pos' 0.
+Fail Eval compute in build_pos' 0.
 
 
 
@@ -135,10 +134,10 @@ Eval compute in build_pos' 0.
 
 Definition IsNat (n:nat) := {m:nat | n = m}.
 
-Definition h (x:{n:nat | n > 0}) : IsNat x.1 := ? x.1.
+(* Definition h (x:{n:nat | n > 0}) : IsNat x.1 := ? x.1.
 Definition hh := <?? h.
 
 Eval compute in hh (S O).
 Eval compute in hh O.
 Eval cbn in hh O.
-Eval cbv in hh O.
+Eval cbv in hh O. *)
