@@ -83,6 +83,18 @@ intros. destruct x; destruct y.
 - left. reflexivity.
 Defined.
 
+Definition Decidable_and (HP HQ : Decidable) : decidable (HP /\ HQ).
+  destruct HP.
+  destruct dec0.
+  - destruct HQ.
+    destruct dec0.
+  + exact (left (conj p p0)).
+  + apply right. intro H. exact (n (proj2 H)).
+- apply right. intro H. exact (n (proj1 H)).
+Defined.
+
+Canonical dec_and_can (HP HQ : Decidable) := Pack (HP /\ HQ) (Decidable_and HP HQ).
+
 Definition Decidable_or (HP : Decidable)
         (HQ : Decidable) : decidable (HP \/ HQ).
 destruct HP. destruct dec0.
@@ -92,9 +104,19 @@ destruct HP. destruct dec0.
   + apply right. intro H. case H; auto.
 Defined.
     
-Canonical Structure dec_or_can (A B : Decidable) : Decidable := Pack (A \/ B) (Decidable_or A B).
+Canonical dec_or_can (A B : Decidable) := Pack (A \/ B) (Decidable_or A B).
 
-Definition Decidable_implies (HP : Decidable) (HQ : Decidable) : decidable (HP -> HQ).
+Definition Decidable_not (HP : Decidable) : 
+  decidable (not HP).
+  destruct (HP).
+  destruct dec0.
+- exact (right (fun X => X p)).
+- exact (left n).
+Defined.
+
+Canonical dec_not_can (HP : Decidable) := Pack (not HP) (Decidable_not _).
+
+Definition Decidable_implies (HP HQ : Decidable) : decidable (HP -> HQ).
 destruct HQ. destruct dec0.
 - exact (left (fun _ => p)).
 - destruct HP. destruct dec0.
@@ -102,7 +124,7 @@ destruct HQ. destruct dec0.
   + apply left. intro p. destruct (n0 p).
 Defined.
 
-Canonical Structure dec_implies_can (HP : Decidable) (HQ : Decidable) := Pack (HP -> HQ) (Decidable_implies _ _).
+Canonical Structure dec_implies_can (HP HQ : Decidable) := Pack (HP -> HQ) (Decidable_implies _ _).
 
 Canonical Structure dec_eq_option_can (HA: EqDecidable) := PackEq (option (type HA)) (Decidable_eq_option _).
 
