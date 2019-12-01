@@ -14,6 +14,8 @@ Canonical DecBool (t : bool) := Pack (Is_true t) (dec_bool t).
 
 Structure EqDecidable := PackEq { type : Type; eq_dec : forall a b : type, decidable (a = b) }.
 
+Canonical dec_eq (A : EqDecidable) (a b : type A) := Pack (a = b) (eq_dec A a b).
+
 Definition Decidable_eq_bool : forall (x y : bool), decidable (eq x y).
 intros. destruct x, y; try (left; done); try (right; intro H; inversion H).
 Defined.

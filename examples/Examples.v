@@ -59,9 +59,9 @@ Definition cast_list (A: Type) (P : A -> Decidable) :
 
 Notation "?::" := (cast_list _ _).
 
-Fail Definition list_of_3: list {n:nat | n = 3} := ?:: (3 :: 2 :: 1 :: nil).
+Definition list_of_3: list {n:nat | n = 3} := ?:: (3 :: 2 :: 1 :: nil).
 
-Fail Eval compute in list_of_3.
+Eval compute in list_of_3.
 
 
 (* strengthening the range of S *)
