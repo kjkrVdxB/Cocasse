@@ -27,7 +27,7 @@ Notation " ( x ; p ) " := (exist _ x p).
 Axiom failed_cast : 
   forall {A : Type} {P : A -> Prop} (a:A) {msg1:string} (msg2: Prop), {a : A | P a}.
 
-Definition cast (A : Type) `{Show A} (P : A -> Decidable) (a : A)
+Definition cast (A : Type) (P : A -> Decidable) (a : A)
   : {a : A | P a} :=
   match dec (P a) with
     | left p => (a ; p)
@@ -36,11 +36,9 @@ Definition cast (A : Type) `{Show A} (P : A -> Decidable) (a : A)
 
 Notation "?" := (cast _ _).
 
-Definition x : { n : nat | n <= 10 } := ? 9.
-
 (* Cast with explicit decidability proof *)
 
-Definition cast_proof (A : Type) `{Show A} (P : A -> Prop) (a : A) (proof : decidable (P a)) : {a: A | P a} :=
+Definition cast_proof (A : Type) (P : A -> Prop) (a : A) (proof : decidable (P a)) : {a: A | P a} :=
   match proof with
     | left p => (a ; p)
     | right _ => failed_cast a (msg1 := show a) (P a)
@@ -50,13 +48,13 @@ Definition cast_proof (A : Type) `{Show A} (P : A -> Prop) (a : A) (proof : deci
 (* Casts for non-dependent functions *)
 
 (* - strengthening the range *)
-Definition cast_fun_range (A B : Type) `{Show B} (P : B -> Decidable) :
+Definition cast_fun_range (A : Type) (B : Type) (P : B -> Decidable) :
     (A -> B) -> A -> {b : B | P b} :=
   fun f a => ? (f a).
 Notation "?>" := (cast_fun_range _ _ _ _).
 
 (* - relaxing the domain *)
-Definition cast_fun_dom (A B : Type) `{Show A} (P: A -> Decidable) :
+Definition cast_fun_dom (A : Type) (B : Type) (P: A -> Decidable) :
     ({a : A | P a} -> B)  -> A -> B :=
   fun f a => f (? a).
 Notation "<?" := (cast_fun_dom _ _ _ _).
@@ -64,7 +62,7 @@ Notation "<?" := (cast_fun_dom _ _ _ _).
 (* Casts for dependent functions *)
 
 (* - strengthening the range *)
-Definition cast_forall_range (A: Type) (B: A -> Type) `{forall a, Show (B a)}
+Definition cast_forall_range (A: Type) (B: A -> Type)
   (P : forall a:A, B a -> Decidable) :
     (forall a: A, B a) -> forall a: A, {b : B a | P a b} :=
   fun f a => ? (f a).
@@ -76,10 +74,10 @@ Notation "??>" := (cast_forall_range _ _ _ _).
    when the projection is used. *)
 
 Axiom failed_cast_proj1 : 
-  forall {A:Type} `{Show A} {P : A -> Prop} {a: A} (msg:Prop),
+  forall {A:Type} {P : A -> Prop} {a: A} (msg:Prop),
     (failed_cast (P:=P) a (msg1 := show a) msg).1 = a.
 
-Definition hide_cast (A: Type) (P: A -> Decidable) (B: A -> Type) `{Show A}
+Definition hide_cast (A: Type) (P: A -> Decidable) (B: A -> Type)
             (a:A): B (cast A P a).1 -> B a.
 Proof.
   unfold cast. case (dec (P a)); intro p.
@@ -89,7 +87,7 @@ Defined.
 
 Notation "[?]" := (hide_cast _ _ _ _).
 
-Definition cast_forall_dom (A: Type) (P: A -> Decidable) `{Show A}
+Definition cast_forall_dom (A: Type) (P: A -> Decidable)
            (B: A -> Type) :
    (forall x: {a : A | P a}, B x.1)  -> (forall a : A, B a) :=
   fun f a => [?] (f (? a)).

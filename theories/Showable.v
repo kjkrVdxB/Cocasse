@@ -7,9 +7,16 @@
                                                  
 Require Import String.
 
-(* The Show class for values convertible to strings, similar to the Haskell Show class  *)
+(* The Show structure for values convertible to strings, similar to the Haskell Show class *)
 
-Class Show (A :Type) := { show : A -> string }.
+Structure Show := ShowPack { type : Type; get_show : type -> string }.
+
+Coercion type : Show >-> Sortclass.
+
+Definition show (e : Show) : type e -> string :=
+  let 'ShowPack _ the_show := e in the_show.
+
+Arguments show {e} obj : simpl never.
 
 Local Open Scope string_scope.
 
@@ -17,13 +24,12 @@ Local Open Scope string_scope.
 
 Definition not_implemented := "not implemented".
 
-Instance show_default A : Show A := {| show := fun _ => not_implemented|}.
+Canonical Structure show_default (A : Type) := ShowPack A (fun _ => not_implemented).
 
 (* Instance for nat *)
-Instance show_nat : Show nat :=
-  {| show := fix _show_nat n :=
+Canonical Structure show_nat := ShowPack nat
+  (fix _show_nat n :=
        match n with
          | O => "O"
          | S n0 => "S (" ++ _show_nat n0 ++ ")"
-       end
-  |}.
+       end).

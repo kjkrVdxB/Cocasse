@@ -7,7 +7,7 @@
 (* Add LoadPath "." as Casts. *)
 
 Require Export Unicode.Utf8_core.
-Require Import Cast DecSSR Showable List ExtrOcamlString.
+Require Import Cast DecSSR List ExtrOcamlString.
 
 Local Open Scope string_scope.
 
@@ -54,7 +54,7 @@ Fail Eval compute in ((wrap 10) .1).
 
 (* Casting lists *)
 
-Definition cast_list (A: Type) `{Show A} (P : A -> Decidable) : 
+Definition cast_list (A: Type) (P : A -> Decidable) : 
     list A -> list {a : A | P a} := map (fun a => ? a).
 
 Notation "?::" := (cast_list _ _).
